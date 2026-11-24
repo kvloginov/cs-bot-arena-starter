@@ -1,0 +1,10 @@
+[project]
+name = "arena-sdk"
+version = "0.1.0"
+description = "SDK for CS 1.6 Bot Arena bots: protocol models, bot runner, aiming and navigation"
+requires-python = ">=3.12"
+dependencies = ["pydantic>=2.11"]
+
+[build-system]
+requires = ["uv_build>=0.10.2,<0.11"]
+build-backend = "uv_build"

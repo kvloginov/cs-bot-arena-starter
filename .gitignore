@@ -1,0 +1,4 @@
+# The zips you make to upload, and what running Python leaves behind
+*.zip
+__pycache__/
+.venv/

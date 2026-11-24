@@ -1,0 +1,5 @@
+# Bot manifest (docs/BOT_API.md, section 11). The platform runs cmd in this directory.
+title: Reference bot
+description: The SDK's worked example. T walks to site A and plants; CT holds site B and defuses.
+language: Python
+cmd: [python, bot.py]

@@ -1,0 +1,5 @@
+# Bot manifest (docs/BOT_API.md, section 11). The platform runs cmd in this directory.
+title: TS minimal bot
+description: Minimal TypeScript bot without packages. Runs at the nearest visible enemy, else to the enemy spawn, and shoots when aimed.
+language: TypeScript
+cmd: [node, bot.ts]

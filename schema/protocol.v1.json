@@ -1,0 +1,1684 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CS 1.6 Bot Arena protocol v1",
+  "$defs": {
+    "Action": {
+      "additionalProperties": false,
+      "description": "The bot's answer to a tick. Every field may be omitted; `{}` does nothing.",
+      "properties": {
+        "type": {
+          "const": "action",
+          "default": "action",
+          "title": "Type",
+          "type": "string"
+        },
+        "tick": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The tick you are answering.",
+          "title": "Tick"
+        },
+        "move": {
+          "$ref": "#/$defs/Move",
+          "default": {
+            "forward": 0.0,
+            "side": 0.0
+          }
+        },
+        "look": {
+          "$ref": "#/$defs/Look",
+          "default": {
+            "dyaw": 0.0,
+            "dpitch": 0.0
+          }
+        },
+        "buttons": {
+          "default": [],
+          "description": "Buttons held during this tick.",
+          "items": {
+            "enum": [
+              "attack",
+              "attack2",
+              "jump",
+              "duck",
+              "walk",
+              "reload",
+              "use"
+            ],
+            "type": "string"
+          },
+          "title": "Buttons",
+          "type": "array"
+        },
+        "weapon": {
+          "anyOf": [
+            {
+              "enum": [
+                "glock18",
+                "usp",
+                "p228",
+                "deagle",
+                "elite",
+                "fiveseven",
+                "m3",
+                "xm1014",
+                "mac10",
+                "tmp",
+                "mp5navy",
+                "ump45",
+                "p90",
+                "galil",
+                "famas",
+                "ak47",
+                "m4a1",
+                "sg552",
+                "aug",
+                "scout",
+                "awp",
+                "sg550",
+                "g3sg1",
+                "m249",
+                "knife",
+                "hegrenade",
+                "flashbang",
+                "smokegrenade",
+                "c4"
+              ],
+              "type": "string"
+            },
+            {
+              "maximum": 5,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Switch to a weapon by name or by slot (1-5).",
+          "title": "Weapon"
+        },
+        "buy": {
+          "default": [],
+          "description": "Items to buy, in order; only in a buy zone during buy time.",
+          "items": {
+            "enum": [
+              "glock18",
+              "usp",
+              "p228",
+              "deagle",
+              "elite",
+              "fiveseven",
+              "m3",
+              "xm1014",
+              "mac10",
+              "tmp",
+              "mp5navy",
+              "ump45",
+              "p90",
+              "galil",
+              "famas",
+              "ak47",
+              "m4a1",
+              "sg552",
+              "aug",
+              "scout",
+              "awp",
+              "sg550",
+              "g3sg1",
+              "m249",
+              "hegrenade",
+              "flashbang",
+              "smokegrenade",
+              "vest",
+              "vesthelm",
+              "defuser",
+              "nvgs",
+              "shield",
+              "primammo",
+              "secammo"
+            ],
+            "type": "string"
+          },
+          "title": "Buy",
+          "type": "array"
+        }
+      },
+      "title": "Action",
+      "type": "object"
+    },
+    "DamagedBy": {
+      "description": "You were hit.",
+      "properties": {
+        "kind": {
+          "const": "damaged_by",
+          "default": "damaged_by",
+          "title": "Kind",
+          "type": "string"
+        },
+        "yaw": {
+          "description": "World yaw from you to the attacker.",
+          "title": "Yaw",
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "yaw"
+      ],
+      "title": "DamagedBy",
+      "type": "object"
+    },
+    "Hello": {
+      "description": "First message of a match. Answer with `ready`.",
+      "properties": {
+        "type": {
+          "const": "hello",
+          "default": "hello",
+          "title": "Type",
+          "type": "string"
+        },
+        "protocol": {
+          "const": 1,
+          "default": 1,
+          "description": "Protocol version.",
+          "title": "Protocol",
+          "type": "integer"
+        },
+        "player_id": {
+          "description": "Your id; other players' ids appear in `visible_enemies`, `teammates` and `events`.",
+          "title": "Player Id",
+          "type": "string"
+        },
+        "side": {
+          "description": "Your side now (a bot restarted mid-match gets the current side). Sides change at half\ntime: see `round_start.side`.",
+          "enum": [
+            "T",
+            "CT"
+          ],
+          "title": "Side",
+          "type": "string"
+        },
+        "map": {
+          "$ref": "#/$defs/MapInfo"
+        },
+        "match": {
+          "$ref": "#/$defs/MatchSettings"
+        },
+        "config": {
+          "$ref": "#/$defs/Rules"
+        }
+      },
+      "required": [
+        "type",
+        "protocol",
+        "player_id",
+        "side",
+        "map",
+        "match",
+        "config"
+      ],
+      "title": "Hello",
+      "type": "object"
+    },
+    "Hit": {
+      "description": "You hit a player.",
+      "properties": {
+        "kind": {
+          "const": "hit",
+          "default": "hit",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "damage": {
+          "title": "Damage",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "damage"
+      ],
+      "title": "Hit",
+      "type": "object"
+    },
+    "Killed": {
+      "description": "You killed a player.",
+      "properties": {
+        "kind": {
+          "const": "killed",
+          "default": "killed",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "title": "Killed",
+      "type": "object"
+    },
+    "Look": {
+      "additionalProperties": false,
+      "properties": {
+        "dyaw": {
+          "default": 0.0,
+          "description": "Turn, degrees, positive = left; clamped to the turn limit.",
+          "title": "Dyaw",
+          "type": "number"
+        },
+        "dpitch": {
+          "default": 0.0,
+          "description": "Turn, degrees, positive = up; clamped to the turn limit, pitch stays within ±89.",
+          "title": "Dpitch",
+          "type": "number"
+        }
+      },
+      "title": "Look",
+      "type": "object"
+    },
+    "MapInfo": {
+      "description": "Static map information.",
+      "properties": {
+        "name": {
+          "description": "Map name, e.g. \"de_dust2\".",
+          "title": "Name",
+          "type": "string"
+        },
+        "bombsites": {
+          "additionalProperties": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "maxItems": 3,
+                "minItems": 3,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "maxItems": 3,
+                "minItems": 3,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              }
+            ],
+            "type": "array"
+          },
+          "description": "Bomb site areas by letter, as `[min corner, max corner]` boxes.",
+          "propertyNames": {
+            "enum": [
+              "A",
+              "B"
+            ]
+          },
+          "title": "Bombsites",
+          "type": "object"
+        },
+        "buyzones": {
+          "additionalProperties": {
+            "items": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "maxItems": 3,
+                  "minItems": 3,
+                  "prefixItems": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ],
+                  "type": "array"
+                },
+                {
+                  "maxItems": 3,
+                  "minItems": 3,
+                  "prefixItems": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ],
+                  "type": "array"
+                }
+              ],
+              "type": "array"
+            },
+            "type": "array"
+          },
+          "description": "Buy zone boxes per side, `[min corner, max corner]`.",
+          "propertyNames": {
+            "enum": [
+              "T",
+              "CT"
+            ]
+          },
+          "title": "Buyzones",
+          "type": "object"
+        },
+        "spawns": {
+          "additionalProperties": {
+            "items": {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            "type": "array"
+          },
+          "description": "Spawn points per side (player origins).",
+          "propertyNames": {
+            "enum": [
+              "T",
+              "CT"
+            ]
+          },
+          "title": "Spawns",
+          "type": "object"
+        },
+        "nav": {
+          "$ref": "#/$defs/NavData"
+        }
+      },
+      "required": [
+        "name",
+        "bombsites",
+        "buyzones",
+        "spawns",
+        "nav"
+      ],
+      "title": "MapInfo",
+      "type": "object"
+    },
+    "MatchEnd": {
+      "description": "Last message of the match.",
+      "properties": {
+        "type": {
+          "const": "match_end",
+          "default": "match_end",
+          "title": "Type",
+          "type": "string"
+        },
+        "result": {
+          "enum": [
+            "win",
+            "loss",
+            "draw"
+          ],
+          "title": "Result",
+          "type": "string"
+        },
+        "score": {
+          "$ref": "#/$defs/Score"
+        }
+      },
+      "required": [
+        "type",
+        "result",
+        "score"
+      ],
+      "title": "MatchEnd",
+      "type": "object"
+    },
+    "MatchSettings": {
+      "description": "Public match settings (sent in `hello.match`). Defaults are the arena defaults.",
+      "properties": {
+        "max_rounds": {
+          "default": 30,
+          "description": "Rounds in regulation time; sides switch after half of them (MR15 = 30).",
+          "title": "Max Rounds",
+          "type": "integer"
+        },
+        "overtime": {
+          "$ref": "#/$defs/Overtime",
+          "default": {
+            "enabled": true,
+            "max_rounds": 6,
+            "start_money": 10000
+          }
+        },
+        "freeze_time": {
+          "default": 3,
+          "description": "Freeze time at the start of each round, seconds.",
+          "title": "Freeze Time",
+          "type": "integer"
+        },
+        "buy_time": {
+          "default": 15,
+          "description": "Buy time, seconds.",
+          "title": "Buy Time",
+          "type": "integer"
+        },
+        "round_time": {
+          "default": 115,
+          "description": "Round time, seconds.",
+          "title": "Round Time",
+          "type": "integer"
+        },
+        "c4_timer": {
+          "default": 35,
+          "description": "Seconds from the plant to the explosion.",
+          "title": "C4 Timer",
+          "type": "integer"
+        },
+        "start_money": {
+          "default": 800,
+          "description": "Money at the start of the match and of the second half, dollars.",
+          "title": "Start Money",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "max_rounds",
+        "overtime",
+        "freeze_time",
+        "buy_time",
+        "round_time",
+        "c4_timer",
+        "start_money"
+      ],
+      "title": "MatchSettings",
+      "type": "object"
+    },
+    "Move": {
+      "additionalProperties": false,
+      "properties": {
+        "forward": {
+          "default": 0.0,
+          "description": "Forward (+) / back (-), relative to the view; 1 = full speed of the active weapon.",
+          "maximum": 1,
+          "minimum": -1,
+          "title": "Forward",
+          "type": "number"
+        },
+        "side": {
+          "default": 0.0,
+          "description": "Right (+) / left (-), relative to the view.",
+          "maximum": 1,
+          "minimum": -1,
+          "title": "Side",
+          "type": "number"
+        }
+      },
+      "title": "Move",
+      "type": "object"
+    },
+    "NavData": {
+      "description": "The map's navigation mesh. `arena_sdk.nav.NavMesh.from_json(hello.map.nav)` gives\n`path`, `place_of` and `area_at`.",
+      "properties": {
+        "areas": {
+          "description": "`[id, flags, x0, y0, z0, x1, y1, z1, ne_z, sw_z, [ids of areas you can walk to]]`: a\nrectangle from (x0, y0) to (x1, y1) with the floor height at each corner: z0 at (x0, y0),\nz1 at (x1, y1), ne_z at (x1, y0), sw_z at (x0, y1). Flags: 1 crouch, 2 jump, 4 precise,\n8 no jump.",
+          "items": {
+            "maxItems": 11,
+            "minItems": 11,
+            "prefixItems": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Areas",
+          "type": "array"
+        },
+        "zones": {
+          "description": "Named places; the first zone that contains a point names it.",
+          "items": {
+            "$ref": "#/$defs/NavZone"
+          },
+          "title": "Zones",
+          "type": "array"
+        }
+      },
+      "required": [
+        "areas",
+        "zones"
+      ],
+      "title": "NavData",
+      "type": "object"
+    },
+    "NavZone": {
+      "description": "A named place: a polygon in x/y and a z range.",
+      "properties": {
+        "name": {
+          "description": "E.g. \"BombsiteA\", \"Mid\", \"LongA\".",
+          "title": "Name",
+          "type": "string"
+        },
+        "z": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Z",
+          "type": "array"
+        },
+        "polygon": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Polygon",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "z",
+        "polygon"
+      ],
+      "title": "NavZone",
+      "type": "object"
+    },
+    "Observation": {
+      "properties": {
+        "tick": {
+          "description": "Tick number; echo it in `action.tick`.",
+          "title": "Tick",
+          "type": "integer"
+        },
+        "time": {
+          "description": "Game time, seconds.",
+          "title": "Time",
+          "type": "number"
+        },
+        "round": {
+          "$ref": "#/$defs/RoundState"
+        },
+        "self": {
+          "$ref": "#/$defs/SelfState"
+        },
+        "visible_enemies": {
+          "items": {
+            "$ref": "#/$defs/VisibleEnemy"
+          },
+          "title": "Visible Enemies",
+          "type": "array"
+        },
+        "bomb": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VisibleBomb"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The dropped or planted bomb when you see it (same rules as enemies); null otherwise."
+        },
+        "teammates": {
+          "items": {
+            "$ref": "#/$defs/Teammate"
+          },
+          "title": "Teammates",
+          "type": "array"
+        },
+        "sounds": {
+          "items": {
+            "$ref": "#/$defs/Sound"
+          },
+          "title": "Sounds",
+          "type": "array"
+        },
+        "events": {
+          "description": "What happened to you since the previous tick.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "damaged_by": "#/$defs/DamagedBy",
+                "hit": "#/$defs/Hit",
+                "killed": "#/$defs/Killed"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DamagedBy"
+              },
+              {
+                "$ref": "#/$defs/Killed"
+              },
+              {
+                "$ref": "#/$defs/Hit"
+              }
+            ]
+          },
+          "title": "Events",
+          "type": "array"
+        },
+        "warnings": {
+          "description": "Problems with your previous action, e.g. an unknown item in `buy`.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "tick",
+        "time",
+        "round",
+        "self",
+        "visible_enemies",
+        "bomb",
+        "teammates",
+        "sounds",
+        "events",
+        "warnings"
+      ],
+      "title": "Observation",
+      "type": "object"
+    },
+    "Overtime": {
+      "properties": {
+        "enabled": {
+          "default": true,
+          "description": "Whether a tie after `max_rounds` is played on in overtimes.",
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "max_rounds": {
+          "default": 6,
+          "description": "Rounds in each overtime.",
+          "title": "Max Rounds",
+          "type": "integer"
+        },
+        "start_money": {
+          "default": 10000,
+          "description": "Money at the start of each overtime, dollars.",
+          "title": "Start Money",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "enabled",
+        "max_rounds",
+        "start_money"
+      ],
+      "title": "Overtime",
+      "type": "object"
+    },
+    "Ready": {
+      "additionalProperties": false,
+      "description": "The bot's answer to `hello`.",
+      "properties": {
+        "type": {
+          "const": "ready",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "Ready",
+      "type": "object"
+    },
+    "RoundEnd": {
+      "properties": {
+        "type": {
+          "const": "round_end",
+          "default": "round_end",
+          "title": "Type",
+          "type": "string"
+        },
+        "number": {
+          "description": "The round that ended.",
+          "title": "Number",
+          "type": "integer"
+        },
+        "winner": {
+          "anyOf": [
+            {
+              "enum": [
+                "T",
+                "CT"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Winning side; null for a draw.",
+          "title": "Winner"
+        },
+        "reason": {
+          "enum": [
+            "bomb_exploded",
+            "bomb_defused",
+            "t_eliminated",
+            "ct_eliminated",
+            "time_expired",
+            "draw"
+          ],
+          "title": "Reason",
+          "type": "string"
+        },
+        "score": {
+          "$ref": "#/$defs/Score",
+          "description": "Score after this round."
+        }
+      },
+      "required": [
+        "type",
+        "number",
+        "winner",
+        "reason",
+        "score"
+      ],
+      "title": "RoundEnd",
+      "type": "object"
+    },
+    "RoundStart": {
+      "description": "A new round begins (freeze time).",
+      "properties": {
+        "type": {
+          "const": "round_start",
+          "default": "round_start",
+          "title": "Type",
+          "type": "string"
+        },
+        "number": {
+          "description": "Round number, starting at 1.",
+          "title": "Number",
+          "type": "integer"
+        },
+        "side": {
+          "description": "Your side in this round.",
+          "enum": [
+            "T",
+            "CT"
+          ],
+          "title": "Side",
+          "type": "string"
+        },
+        "score": {
+          "$ref": "#/$defs/Score"
+        }
+      },
+      "required": [
+        "type",
+        "number",
+        "side",
+        "score"
+      ],
+      "title": "RoundStart",
+      "type": "object"
+    },
+    "RoundState": {
+      "properties": {
+        "number": {
+          "description": "Round number, starting at 1.",
+          "title": "Number",
+          "type": "integer"
+        },
+        "phase": {
+          "enum": [
+            "freeze",
+            "live",
+            "bomb_planted",
+            "over"
+          ],
+          "title": "Phase",
+          "type": "string"
+        },
+        "time_left": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Seconds left in this phase; null while the bomb is planted (CS 1.6 hides the timer).",
+          "title": "Time Left"
+        },
+        "score": {
+          "$ref": "#/$defs/Score"
+        },
+        "side": {
+          "description": "Your side in this round.",
+          "enum": [
+            "T",
+            "CT"
+          ],
+          "title": "Side",
+          "type": "string"
+        },
+        "bomb_planted": {
+          "description": "Whether the bomb is planted. Where is not said: look for `obs.bomb`, listen for\n`bomb_beep`.",
+          "title": "Bomb Planted",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "number",
+        "phase",
+        "time_left",
+        "score",
+        "side",
+        "bomb_planted"
+      ],
+      "title": "RoundState",
+      "type": "object"
+    },
+    "Rules": {
+      "description": "Arena rules for this match (sent in `hello.config`). Defaults are the arena defaults.",
+      "properties": {
+        "tick_hz": {
+          "default": 20,
+          "description": "Observations per second of game time (20 = one tick every 50 ms).",
+          "exclusiveMinimum": 0,
+          "title": "Tick Hz",
+          "type": "integer"
+        },
+        "deadline_ms": {
+          "default": 200,
+          "description": "Wall-clock time a bot has to answer a tick.",
+          "title": "Deadline Ms",
+          "type": "integer"
+        },
+        "fov_deg": {
+          "default": 90,
+          "description": "Horizontal field of view, degrees.",
+          "title": "Fov Deg",
+          "type": "number"
+        },
+        "fov_vertical_deg": {
+          "default": 74,
+          "description": "Vertical field of view, degrees (90 horizontal on a 4:3 screen is about 74 vertical).",
+          "title": "Fov Vertical Deg",
+          "type": "number"
+        },
+        "vision_delay_ms": {
+          "default": 150,
+          "description": "Enemies are seen as they were this long ago.",
+          "title": "Vision Delay Ms",
+          "type": "integer"
+        },
+        "sound_dir_noise_deg": {
+          "default": 10,
+          "description": "Sound direction error: uniform in [-noise, +noise] degrees.",
+          "title": "Sound Dir Noise Deg",
+          "type": "number"
+        },
+        "max_turn_rate_dps": {
+          "default": 720,
+          "description": "Turn limit, degrees per second, applied to yaw and pitch separately.",
+          "title": "Max Turn Rate Dps",
+          "type": "number"
+        },
+        "teammates_visible": {
+          "default": true,
+          "description": "Teammates' positions are sent like the radar in CS.",
+          "title": "Teammates Visible",
+          "type": "boolean"
+        },
+        "step_speed": {
+          "default": 150,
+          "description": "Footsteps only above this speed, jumps at this speed or faster, units/s (CS 1.6).",
+          "title": "Step Speed",
+          "type": "number"
+        },
+        "step_radius": {
+          "default": 1100,
+          "description": "Hearing radius of a footstep or a jump, units.",
+          "title": "Step Radius",
+          "type": "number"
+        },
+        "land_radius": {
+          "default": 1100,
+          "description": "Hearing radius of a landing, units.",
+          "title": "Land Radius",
+          "type": "number"
+        },
+        "reload_radius": {
+          "default": 1100,
+          "description": "Hearing radius of a reload, units.",
+          "title": "Reload Radius",
+          "type": "number"
+        },
+        "shot_radius": {
+          "default": 2000,
+          "description": "Hearing radius of an unsilenced shot, units.",
+          "title": "Shot Radius",
+          "type": "number"
+        },
+        "silenced_shot_radius": {
+          "default": 1000,
+          "description": "Hearing radius of a shot from a silenced M4A1/USP or the TMP, units.",
+          "title": "Silenced Shot Radius",
+          "type": "number"
+        },
+        "bomb_plant_radius": {
+          "default": 1100,
+          "description": "Hearing radius of the start of a bomb plant, units.",
+          "title": "Bomb Plant Radius",
+          "type": "number"
+        },
+        "bomb_defuse_radius": {
+          "default": 1100,
+          "description": "Hearing radius of the start of a defuse, units.",
+          "title": "Bomb Defuse Radius",
+          "type": "number"
+        },
+        "grenade_explode_radius": {
+          "default": 99999,
+          "description": "Hearing radius of a grenade detonation, units (the whole map).",
+          "title": "Grenade Explode Radius",
+          "type": "number"
+        },
+        "sound_near_max": {
+          "default": 500,
+          "description": "Sounds up to this distance are \"near\", units.",
+          "title": "Sound Near Max",
+          "type": "number"
+        },
+        "sound_mid_max": {
+          "default": 1500,
+          "description": "Sounds up to this distance (and beyond near) are \"mid\"; farther ones are \"far\", units.",
+          "title": "Sound Mid Max",
+          "type": "number"
+        }
+      },
+      "required": [
+        "tick_hz",
+        "deadline_ms",
+        "fov_deg",
+        "fov_vertical_deg",
+        "vision_delay_ms",
+        "sound_dir_noise_deg",
+        "max_turn_rate_dps",
+        "teammates_visible",
+        "step_speed",
+        "step_radius",
+        "land_radius",
+        "reload_radius",
+        "shot_radius",
+        "silenced_shot_radius",
+        "bomb_plant_radius",
+        "bomb_defuse_radius",
+        "grenade_explode_radius",
+        "sound_near_max",
+        "sound_mid_max"
+      ],
+      "title": "Rules",
+      "type": "object"
+    },
+    "Score": {
+      "description": "Rounds won, from your point of view.",
+      "properties": {
+        "own": {
+          "title": "Own",
+          "type": "integer"
+        },
+        "enemy": {
+          "title": "Enemy",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "own",
+        "enemy"
+      ],
+      "title": "Score",
+      "type": "object"
+    },
+    "SelfState": {
+      "description": "Your own player, exact and current.",
+      "properties": {
+        "pos": {
+          "description": "Player origin (centre of the hull), units.",
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Pos",
+          "type": "array"
+        },
+        "vel": {
+          "description": "Velocity, units/s.",
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Vel",
+          "type": "array"
+        },
+        "yaw": {
+          "description": "View yaw, degrees.",
+          "title": "Yaw",
+          "type": "number"
+        },
+        "pitch": {
+          "description": "View pitch, degrees, positive = up.",
+          "title": "Pitch",
+          "type": "number"
+        },
+        "hp": {
+          "title": "Hp",
+          "type": "integer"
+        },
+        "armor": {
+          "title": "Armor",
+          "type": "integer"
+        },
+        "helmet": {
+          "title": "Helmet",
+          "type": "boolean"
+        },
+        "money": {
+          "title": "Money",
+          "type": "integer"
+        },
+        "alive": {
+          "title": "Alive",
+          "type": "boolean"
+        },
+        "on_ground": {
+          "title": "On Ground",
+          "type": "boolean"
+        },
+        "ducking": {
+          "title": "Ducking",
+          "type": "boolean"
+        },
+        "in_buy_zone": {
+          "title": "In Buy Zone",
+          "type": "boolean"
+        },
+        "in_bomb_site": {
+          "anyOf": [
+            {
+              "enum": [
+                "A",
+                "B"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "In Bomb Site"
+        },
+        "has_c4": {
+          "title": "Has C4",
+          "type": "boolean"
+        },
+        "has_defuser": {
+          "title": "Has Defuser",
+          "type": "boolean"
+        },
+        "weapons": {
+          "items": {
+            "$ref": "#/$defs/WeaponState"
+          },
+          "title": "Weapons",
+          "type": "array"
+        },
+        "active_weapon": {
+          "anyOf": [
+            {
+              "enum": [
+                "glock18",
+                "usp",
+                "p228",
+                "deagle",
+                "elite",
+                "fiveseven",
+                "m3",
+                "xm1014",
+                "mac10",
+                "tmp",
+                "mp5navy",
+                "ump45",
+                "p90",
+                "galil",
+                "famas",
+                "ak47",
+                "m4a1",
+                "sg552",
+                "aug",
+                "scout",
+                "awp",
+                "sg550",
+                "g3sg1",
+                "m249",
+                "knife",
+                "hegrenade",
+                "flashbang",
+                "smokegrenade",
+                "c4"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Active Weapon"
+        },
+        "can_buy": {
+          "description": "In a buy zone during buy time.",
+          "title": "Can Buy",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "pos",
+        "vel",
+        "yaw",
+        "pitch",
+        "hp",
+        "armor",
+        "helmet",
+        "money",
+        "alive",
+        "on_ground",
+        "ducking",
+        "in_buy_zone",
+        "in_bomb_site",
+        "has_c4",
+        "has_defuser",
+        "weapons",
+        "active_weapon",
+        "can_buy"
+      ],
+      "title": "SelfState",
+      "type": "object"
+    },
+    "Sound": {
+      "description": "A sound you heard since the previous tick (through walls too).",
+      "properties": {
+        "kind": {
+          "enum": [
+            "step",
+            "jump",
+            "land",
+            "shot",
+            "reload",
+            "bomb_plant",
+            "bomb_defuse",
+            "grenade_explode",
+            "bomb_beep"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "yaw": {
+          "description": "World yaw from you to the source, in 0.1 degree steps, with noise of up to\n`sound_dir_noise_deg`.",
+          "title": "Yaw",
+          "type": "number"
+        },
+        "distance_band": {
+          "description": "Rough distance: see `sound_near_max` and `sound_mid_max`.",
+          "enum": [
+            "near",
+            "mid",
+            "far"
+          ],
+          "title": "Distance Band",
+          "type": "string"
+        },
+        "age_ms": {
+          "description": "How long ago the sound was made.",
+          "title": "Age Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "yaw",
+        "distance_band",
+        "age_ms"
+      ],
+      "title": "Sound",
+      "type": "object"
+    },
+    "Teammate": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "pos": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Pos",
+          "type": "array"
+        },
+        "alive": {
+          "title": "Alive",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "pos",
+        "alive"
+      ],
+      "title": "Teammate",
+      "type": "object"
+    },
+    "Tick": {
+      "description": "One observation. Answer with exactly one `action` line.",
+      "properties": {
+        "type": {
+          "const": "tick",
+          "default": "tick",
+          "title": "Type",
+          "type": "string"
+        },
+        "obs": {
+          "$ref": "#/$defs/Observation"
+        }
+      },
+      "required": [
+        "type",
+        "obs"
+      ],
+      "title": "Tick",
+      "type": "object"
+    },
+    "VisibleBomb": {
+      "description": "The bomb on the ground, if you can see it, as it was `vision_delay_ms` ago.",
+      "properties": {
+        "pos": {
+          "description": "Bomb position, units.",
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Pos",
+          "type": "array"
+        },
+        "state": {
+          "enum": [
+            "dropped",
+            "planted"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "pos",
+        "state"
+      ],
+      "title": "VisibleBomb",
+      "type": "object"
+    },
+    "VisibleEnemy": {
+      "description": "An enemy you can see, as it was `vision_delay_ms` ago.",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "pos": {
+          "description": "Origin then, units.",
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Pos",
+          "type": "array"
+        },
+        "head_pos": {
+          "description": "Head then, units.",
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Head Pos",
+          "type": "array"
+        },
+        "rel_yaw": {
+          "description": "Yaw from your current eyes to `head_pos`, relative to your current view; positive = left.",
+          "title": "Rel Yaw",
+          "type": "number"
+        },
+        "rel_pitch": {
+          "description": "Pitch from your current eyes to `head_pos`, relative to your current view; positive = up.",
+          "title": "Rel Pitch",
+          "type": "number"
+        },
+        "distance": {
+          "description": "From your current eyes to `head_pos`, units.",
+          "title": "Distance",
+          "type": "number"
+        },
+        "weapon": {
+          "anyOf": [
+            {
+              "enum": [
+                "glock18",
+                "usp",
+                "p228",
+                "deagle",
+                "elite",
+                "fiveseven",
+                "m3",
+                "xm1014",
+                "mac10",
+                "tmp",
+                "mp5navy",
+                "ump45",
+                "p90",
+                "galil",
+                "famas",
+                "ak47",
+                "m4a1",
+                "sg552",
+                "aug",
+                "scout",
+                "awp",
+                "sg550",
+                "g3sg1",
+                "m249",
+                "knife",
+                "hegrenade",
+                "flashbang",
+                "smokegrenade",
+                "c4"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Weapon"
+        },
+        "ducking": {
+          "title": "Ducking",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "pos",
+        "head_pos",
+        "rel_yaw",
+        "rel_pitch",
+        "distance",
+        "weapon",
+        "ducking"
+      ],
+      "title": "VisibleEnemy",
+      "type": "object"
+    },
+    "WeaponState": {
+      "properties": {
+        "name": {
+          "enum": [
+            "glock18",
+            "usp",
+            "p228",
+            "deagle",
+            "elite",
+            "fiveseven",
+            "m3",
+            "xm1014",
+            "mac10",
+            "tmp",
+            "mp5navy",
+            "ump45",
+            "p90",
+            "galil",
+            "famas",
+            "ak47",
+            "m4a1",
+            "sg552",
+            "aug",
+            "scout",
+            "awp",
+            "sg550",
+            "g3sg1",
+            "m249",
+            "knife",
+            "hegrenade",
+            "flashbang",
+            "smokegrenade",
+            "c4"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "slot": {
+          "description": "1 primary, 2 pistol, 3 knife, 4 grenades, 5 bomb.",
+          "title": "Slot",
+          "type": "integer"
+        },
+        "clip": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Rounds in the magazine; null for the knife, grenades and the bomb.",
+          "title": "Clip"
+        },
+        "reserve": {
+          "description": "Spare rounds; for grenades, how many you carry.",
+          "title": "Reserve",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "slot",
+        "clip",
+        "reserve"
+      ],
+      "title": "WeaponState",
+      "type": "object"
+    }
+  },
+  "discriminator": {
+    "mapping": {
+      "action": "#/$defs/Action",
+      "hello": "#/$defs/Hello",
+      "match_end": "#/$defs/MatchEnd",
+      "ready": "#/$defs/Ready",
+      "round_end": "#/$defs/RoundEnd",
+      "round_start": "#/$defs/RoundStart",
+      "tick": "#/$defs/Tick"
+    },
+    "propertyName": "type"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/Hello"
+    },
+    {
+      "$ref": "#/$defs/Ready"
+    },
+    {
+      "$ref": "#/$defs/RoundStart"
+    },
+    {
+      "$ref": "#/$defs/Tick"
+    },
+    {
+      "$ref": "#/$defs/Action"
+    },
+    {
+      "$ref": "#/$defs/RoundEnd"
+    },
+    {
+      "$ref": "#/$defs/MatchEnd"
+    }
+  ]
+}
